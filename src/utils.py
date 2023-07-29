@@ -8,11 +8,13 @@ from selenium.common import NoSuchElementException, ElementClickInterceptedExcep
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.common.by import By
 
+from src.constants import ERROR_PIC_FILENAME, URLS_DELIMITER
 from src.exceptions import MissingDotenvData, AuthorizationFailedException
 
 
-def get_driver():
+def get_driver(download_folder: str = ''):
     options = ChromeOptions()
+    options.add_experimental_option('prefs', {'download.default_directory': download_folder})
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     options.add_experimental_option('useAutomationExtension', False)
     options.add_argument("--disable-blink-features=AutomationControlled")
@@ -51,8 +53,11 @@ def auth(driver: Chrome, login: str, password: str):
 
 # noinspection PyTypeChecker
 def unite(folder: str, output_filename: str = 'output.csv'):
+    if not (filenames := os.listdir(folder)):
+        return print(f'Папка {folder} пуста!')
+    print(f'Найдено файлов: {len(filenames)}')
     d = dict()
-    for filename in os.listdir(folder):
+    for filename in filenames:
         with open(os.path.join(folder, filename), encoding='utf-8') as f:
             for row in DictReader(f, f.readline().strip().split(','), delimiter=',', quotechar='"'):
                 if (keyword := row['Keyword']) not in d:
@@ -61,29 +66,25 @@ def unite(folder: str, output_filename: str = 'output.csv'):
                                   'KD': (row['KD']
                                          if row['KD'] is not None and row['KD'] != ''
                                          else 100),
-                                  'URL': [row['Current URL inside']] if row['Current URL inside'] else []}
+                                  'URL': [row['Current URL']] if row['Current URL'] else []}
                 else:
                     d[keyword]['Count'] += 1
-                    if row['Current URL inside']:
-                        d[keyword]['URL'].append(row['Current URL inside'])
+                    if row['Current URL']:
+                        d[keyword]['URL'].append(row['Current URL'])
     fieldnames = ['Keyword', 'Count', 'SERP features', 'Volume', 'KD', 'URL']
     with open(output_filename, 'w', newline='', encoding='utf-8') as f:
-        writer = DictWriter(f, fieldnames, delimiter=',', quotechar='"')
+        writer = DictWriter(f, fieldnames, delimiter=';', quotechar='"')
         writer.writeheader()
         for keyword in d:
-            url_list = d[keyword].pop('URL')
-            if len(url_list) > 2:
-                print(url_list)
-            url = '|'.join(url_list)
+            url = URLS_DELIMITER.join(d[keyword].pop('URL'))
             writer.writerow({'Keyword': keyword, **d[keyword], 'URL': url})
+    print(f'Успешно сформирован сводный файл {output_filename}')
 
 
-def missing_handler(driver: Chrome, text: str):
-    if input(f'{text}. Продолжить? (y\\n): ').lower() != 'y':
-        driver.close()
-        driver.quit()
-        exit()
-    return
+def handle_exception(driver: Chrome, exception_cls, text: str,
+                     error_pic_filename: str = ERROR_PIC_FILENAME):
+    driver.save_screenshot(error_pic_filename)
+    return exception_cls(f'{text} (см. {error_pic_filename})')
 
 
 if __name__ == '__main__':

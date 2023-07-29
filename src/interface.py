@@ -30,10 +30,10 @@ def get_interval(text: str = '', default: tuple = DEFAULT_INTERVAL):
             print('Концов интервала должно быть 2', end='\n\n')
 
 
-def proceed():
+def proceed(folder: str):
     credentials_filename = os.getenv('credentials_filename', 'credentials.txt')
     third_party_source = False
-    driver = get_driver()
+    driver = get_driver(os.path.abspath(folder))
     with open(credentials_filename, encoding='utf-8') as f:
         lines = [x.strip() for x in f.readlines()]
         if len(lines) > 1:

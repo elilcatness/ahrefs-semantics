@@ -1,5 +1,5 @@
 import os
-import random
+from random import randint
 import shutil
 import time
 
@@ -8,11 +8,12 @@ from dotenv import load_dotenv
 from src.exceptions import FileIsEmptyException, MissingDotenvData
 from src.interface import *
 from src.parse import export
+from src.utils import unite
 
 
 def main():
+    folder = os.getenv('folder', 'export')
     if input('Запуск в офлайн-режиме (y\\n): ').lower() != 'y':
-        folder = os.getenv('folder', 'export')
         if os.path.exists(folder):
             if input(f'Папка {folder} будет удалена. Продолжить? (y\\n): ').lower() != 'y':
                 return
@@ -29,12 +30,17 @@ def main():
         while not country_code:
             country_code = input('Введите код страны: ').lower()
         interval = get_interval('между запросами')
-        driver, base_url = proceed()
+        os.mkdir(folder)
+        driver, base_url = proceed(folder)
+        count = len(domains)
         for i in range(len(domains)):
-            print(f'{i}. {domains[i]}')
+            print(f'{i + 1}/{count}. {domains[i]}')
             export(driver, base_url + url_suffix.format(country_code, domains[i]))
-            # time.sleep(random())
-    pass
+            if interval != (0, 0) and i < len(domains) - 1:
+                time_arg = float(f'{randint(*interval)}.{randint(0, 9)}')
+                print(f'Отдыхаем {time_arg} секунд перед запросом следующим доменом')
+                time.sleep(time_arg)
+    unite(folder, os.getenv('output_filename', 'output.csv'))
 
 
 if __name__ == '__main__':
