@@ -12,7 +12,8 @@ from src.constants import (EXPORT_BTN_TIMEOUT, RADIO_BTNS_TIMEOUT,
 from src.utils import handle_exception
 
 
-def export(driver: Chrome, url: str):
+def export(driver: Chrome, url: str, country_code: str, domain: str):
+    url = url.format(country_code, domain)
     driver.get(url)
     try:
         export_btn = WebDriverWait(driver, EXPORT_BTN_TIMEOUT).until(
@@ -20,6 +21,9 @@ def export(driver: Chrome, url: str):
     except TimeoutException as e:
         raise handle_exception(
             driver, e.__class__, f'Не удалось найти кнопку экспорта на {url}')
+    if f'country={country_code}' not in driver.current_url:
+        return print('Произошла переадресация на другую страну.\n'
+                     f'{url} пуст. Пропускаем...')
     export_btn.click()
     time.sleep(EXPORT_BTN_CLICK_TIMEOUT)
     try:
@@ -29,6 +33,10 @@ def export(driver: Chrome, url: str):
     except (TimeoutException, AssertionError) as e:
         raise handle_exception(
             driver, e.__class__, f'Не удалось найти кнопки выбора кол-ва строк на {url}')
+    # костыль
+    if len(rows_btns) == 0:
+        raise handle_exception(
+            driver, Exception, f'Не удалось найти кнопки выбора кол-ва строк на {url}')
     if ((rows_btns_count := len(rows_btns)) <= 2 and rows_btns[0].find_element(
             By.XPATH, './..').text.strip().split()[-1] == '0'):
         return print(f'{url} пуст. Пропускаем...')

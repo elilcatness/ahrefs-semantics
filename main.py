@@ -34,11 +34,11 @@ def main():
         driver, base_url = proceed(folder)
         count = len(domains)
         for i in range(len(domains)):
-            print(f'{i + 1}/{count}. {domains[i]}')
-            export(driver, base_url + url_suffix.format(country_code, domains[i]))
+            print(f'[{i + 1}/{count}] {domains[i]}')
+            export(driver, base_url + url_suffix, country_code, domains[i])
             if interval != (0, 0) and i < len(domains) - 1:
                 time_arg = float(f'{randint(*interval)}.{randint(0, 9)}')
-                print(f'Отдыхаем {time_arg} секунд перед запросом следующим доменом')
+                print(f'Отдыхаем {time_arg} секунд перед запросом следующего домена')
                 time.sleep(time_arg)
     unite(folder, os.getenv('output_filename', 'output.csv'))
 
