@@ -8,7 +8,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from src.selectors import *
 from src.constants import (EXPORT_BTN_TIMEOUT, RADIO_BTNS_TIMEOUT,
-                           EXPORT_BTN_CLICK_TIMEOUT, EXPORT_INNER_BTN_CLICK_TIMEOUT)
+                           EXPORT_BTN_CLICK_TIMEOUT, EXPORT_INNER_BTN_CLICK_TIMEOUT, COUNTRY_REDIRECT_TIMEOUT)
 from src.utils import handle_exception
 
 
@@ -21,6 +21,7 @@ def export(driver: Chrome, url: str, country_code: str, domain: str):
     except TimeoutException as e:
         raise handle_exception(
             driver, e.__class__, f'Не удалось найти кнопку экспорта на {url}')
+    time.sleep(COUNTRY_REDIRECT_TIMEOUT)
     if f'country={country_code}' not in driver.current_url:
         return print('Произошла переадресация на другую страну.\n'
                      f'{url} пуст. Пропускаем...')
